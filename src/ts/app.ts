@@ -28,8 +28,7 @@ class Board {
 
             let row = [];
             this.pieces[x] = row;
-
-
+            
             for (var y of _.range(height)) {
                 //create a piece, add to Array
                 let piece = new Piece(x, y);
@@ -42,36 +41,52 @@ class Board {
 
     }
 
+    private _renderDetails() {
+        var svg = d3.select("svg");
+
+        var pieceWidth = +svg.attr("width") / this.width;
+        var pieceHeight = +svg.attr("height") / this.height;
+
+        var d3Cols = svg.selectAll('g')
+            .data(this.pieces)
+
+        d3Cols.enter()
+            .append('g')
+
+        var d3Cell = d3Cols
+            .selectAll('rect')
+            .data((d) => { return d; })
+
+        d3Cell
+            .enter()
+            .append('rect')
+
+        //update
+        d3Cell.attr('x', (d) => { return d.x * pieceWidth; })
+            .attr('y', (d) => { return d.y * pieceHeight; })
+            .attr('width', () => { return pieceWidth; })
+            .attr('height', () => { return pieceHeight; })
+            .attr('fill', (d) => { return (d.isSelected) ? "#f00" : "#aaa"; })
+            .attr('stroke', '#fff')
+            .on("click", (d) => {
+                console.log(d);
+                d.isSelected = true;
+                this._renderDetails();
+            });
+    }
+
     render() {
         var square = 30,
             w = 600,
             h = 300;
 
-        // create the svg
-        var svg = d3.select('#grid').append('svg')
-            .attr("width", w)
-            .attr("height", h);
+        var svg = d3.select('body').append('svg').attr('width', w).attr('height', h);
 
-        // calculate number of rows and columns
-        var squaresRow = _.round(w / square);
-        var squaresColumn = _.round(h / square);
-
-        // loop over number of columns
-        _.times(squaresColumn, function (n) {
-
-            // create each set of rows
-            var rows = svg.selectAll('rect' + ' .row-' + (n + 1))
-                .data(d3.range(squaresRow))
-                .enter().append('rect')
-                .attr("width", square)
-                .attr("height", square)
-                .attr("x", function (d, i) {
-                    return i * square;
-                })
-                .attr("y", n * square)
-                .attr("fill", '#333')
-                .attr("stroke", '#FDBB30')
-        });
+        //believe this triple call ensures that an enter, enter, and update all happen
+        //could possibly complicate the data joins up above to avoid this
+        this._renderDetails();
+        this._renderDetails();
+        this._renderDetails();
     }
 }
 
@@ -80,6 +95,7 @@ class Piece {
     //know location
     x: number;
     y: number;
+    isSelected: boolean;
 
     constructor(x: number, y: number) {
         this.x = x;
