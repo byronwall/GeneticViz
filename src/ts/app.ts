@@ -5,7 +5,7 @@ class App {
     gameBoard: Board;
     constructor() {
         //create a new Board
-        this.gameBoard = new Board(4, 4, 2);
+        this.gameBoard = new Board(15, 15, 4);
         this.gameBoard.render();
     }
 }
@@ -21,7 +21,7 @@ class Board {
     constructor(width: number, height: number, colors = 3) {
         this.width = width;
         this.height = height;
-        this.colors = colors;
+        this.colors = colors - 1;
 
         this.pieces = [];
 
@@ -177,7 +177,7 @@ class Board {
         d3Cell.exit().remove();
 
         //update
-        d3Cell
+        d3Cell.transition()
             .attr('x', (d) => { return d.x * pieceWidth; })
             .attr('y', (d) => { return d.y * pieceHeight; })
             .attr('stroke', (d) => { return (d.isSelected) ? "#000" : "#fff"; })
@@ -185,8 +185,8 @@ class Board {
 
     render() {
         let square = 30;
-        let w = 600;
-        let h = 600;
+        let w = 550;
+        let h = 550;
 
         var svg = d3.select('body').append('svg').attr('width', w).attr('height', h);
 
