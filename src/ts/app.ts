@@ -5,7 +5,7 @@ class App {
     gameBoard: Board;
     constructor() {
         //create a new Board
-        this.gameBoard = new Board(10, 10);
+        this.gameBoard = new Board(4, 4, 2);
         this.gameBoard.render();
     }
 }
@@ -42,6 +42,7 @@ class Board {
 
     private _removePiece(piece: Piece) {
         this.pieces[piece.x][piece.y] = null;
+        console.log("remove: ", piece);
     }
 
     private _shiftDownAndLeft() {
@@ -58,14 +59,14 @@ class Board {
                 }
                 wereAllBlank = false;
                 if (shiftDown > 0 || shiftLeft > 0) {
-                    piece.y = y + shiftDown;
                     piece.x = x - shiftLeft
-                    this.pieces[x - shiftLeft][y + shiftDown] = piece;
+                    piece.y = y + shiftDown;
+                    this.pieces[piece.x][piece.y] = piece;
                     this.pieces[x][y] = null;
                 }
             }
 
-            if(wereAllBlank){
+            if (wereAllBlank) {
                 shiftLeft++;
             }
         }
@@ -73,8 +74,8 @@ class Board {
 
     private _getPieces(): Array<Piece> {
         let nonNullPieces: Array<Piece> = [];
-        for (var col of this.pieces) {
-            for (var piece of col) {
+        for (var column of this.pieces) {
+            for (var piece of column) {
                 if (piece != null) {
                     nonNullPieces.push(piece);
                 }
@@ -88,13 +89,13 @@ class Board {
 
         let neighbors = this._getNeighbors(piece);
 
-        let neighborsTested: Array<Piece> = [piece];
+        let neighborsTested: Array<Piece> = [];
 
         let didRemovalHappen = false;
-        let wasRemoved = false;
 
         while (neighbors.length) {
             let neighborTest = neighbors.pop();
+            if (neighborsTested.indexOf(neighborTest) > -1) continue;
 
             neighborsTested.push(neighborTest);
 
@@ -103,16 +104,13 @@ class Board {
                 this._removePiece(neighborTest)
 
                 for (var nextNeighbor of this._getNeighbors(neighborTest)) {
-                    if (neighborsTested.indexOf(nextNeighbor) == -1) {
-                        neighbors.push(nextNeighbor);
-                    }
+                    neighbors.push(nextNeighbor);
                 }
             }
+        }
 
-            if (didRemovalHappen && !wasRemoved) {
-                this._removePiece(piece);
-                wasRemoved = true;
-            }
+        if (didRemovalHappen) {
+            this._removePiece(piece);
         }
 
         this._shiftDownAndLeft();
@@ -157,34 +155,38 @@ class Board {
         var pieceWidth = +svg.attr("width") / this.width;
         var pieceHeight = +svg.attr("height") / this.height;
 
+        var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+        let data = this._getPieces();
+
         var d3Cell = svg.selectAll('rect')
-            .data(this._getPieces())
+            .data(data, (d: Piece, i) => { return "" + d.id })
 
         d3Cell.enter()
             .append('rect')
-
-        d3Cell.exit().remove();
-
-        var color = d3.scaleOrdinal(d3.schemeCategory10);
-
-        //update
-        d3Cell.attr('x', (d) => { return d.x * pieceWidth; })
-            .attr('y', (d) => { return d.y * pieceHeight; })
             .attr('width', () => { return pieceWidth; })
             .attr('height', () => { return pieceHeight; })
-            .attr('stroke', (d) => { return (d.isSelected) ? "#000" : "#fff"; })
+
             .attr('fill', (d) => { return color(String(d.color)) })
             .on("click", (d) => {
                 console.log(d);
                 this.removePiece(d);
                 this._renderDetails();
             });
+
+        d3Cell.exit().remove();
+
+        //update
+        d3Cell
+            .attr('x', (d) => { return d.x * pieceWidth; })
+            .attr('y', (d) => { return d.y * pieceHeight; })
+            .attr('stroke', (d) => { return (d.isSelected) ? "#000" : "#fff"; })
     }
 
     render() {
-        var square = 30,
-            w = 600,
-            h = 300;
+        let square = 30;
+        let w = 600;
+        let h = 600;
 
         var svg = d3.select('body').append('svg').attr('width', w).attr('height', h);
 
@@ -203,11 +205,16 @@ class Piece {
     y: number;
     isSelected: boolean;
     color: number;
+    id: number;
+
+    static _id: number = 0;
 
     constructor(x: number, y: number, color: number) {
         this.x = x;
         this.y = y;
         this.color = color;
+
+        this.id = Piece._id++;
     }
     //some functions to trigger on events
 }
