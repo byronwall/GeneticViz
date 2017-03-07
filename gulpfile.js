@@ -13,6 +13,14 @@ var paths = {
     pages: ['src/*.html']
 };
 
+function swallowError(error) {
+
+    // If you want details of the error in the console
+    console.log(error.toString())
+
+    this.emit('end')
+}
+
 gulp.task("copy-html", function () {
     return gulp.src(paths.pages)
         .pipe(gulp.dest("dist"));
@@ -31,6 +39,7 @@ gulp.task("bundle", function () {
     return bundler
         .bundle()
         .pipe(source('bundle.js'))
+        .on('error', swallowError)
         .pipe(buffer())
         .pipe(sourcemaps.init({
             loadMaps: true
