@@ -1,5 +1,6 @@
 import * as _ from "lodash";
 import * as d3 from "d3";
+import * as seed from "seedrandom";
 
 class App {
     gameBoard: Board;
@@ -16,6 +17,8 @@ class Board {
     height: number;
     colors: number;
 
+    score: number = 0;
+
     pieces: Array<Array<Piece>>;
 
     constructor(width: number, height: number, colors = 3) {
@@ -25,6 +28,8 @@ class Board {
 
         this.pieces = [];
 
+        let rng = seed("testingthat");
+
         //create the pieces
         for (var x of _.range(width)) {
 
@@ -33,7 +38,7 @@ class Board {
 
             for (var y of _.range(height)) {
                 //create a piece, add to Array
-                var color = _.random(this.colors)
+                var color = Math.floor(rng.quick() * this.colors);
                 let piece = new Piece(x, y, color);
                 column.push(piece);
             }
@@ -89,9 +94,11 @@ class Board {
 
         let neighbors = this._getNeighbors(piece);
 
-        let neighborsTested: Array<Piece> = [];
+        let neighborsTested: Array<Piece> = [piece];
 
         let didRemovalHappen = false;
+
+        let removedPieces = 0;
 
         while (neighbors.length) {
             let neighborTest = neighbors.pop();
@@ -102,6 +109,7 @@ class Board {
             if (neighborTest.color == piece.color) {
                 didRemovalHappen = true;
                 this._removePiece(neighborTest)
+                removedPieces++;
 
                 for (var nextNeighbor of this._getNeighbors(neighborTest)) {
                     neighbors.push(nextNeighbor);
@@ -111,7 +119,10 @@ class Board {
 
         if (didRemovalHappen) {
             this._removePiece(piece);
+            removedPieces++;
         }
+
+        this.score += Math.pow(removedPieces,2);
 
         this._shiftDownAndLeft();
     }
@@ -181,6 +192,8 @@ class Board {
             .attr('x', (d) => { return d.x * pieceWidth; })
             .attr('y', (d) => { return d.y * pieceHeight; })
             .attr('stroke', (d) => { return (d.isSelected) ? "#000" : "#fff"; })
+
+        d3.select("#score").text(this.score);
     }
 
     render() {
