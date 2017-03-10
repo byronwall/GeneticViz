@@ -5,9 +5,41 @@ import * as seed from "seedrandom";
 class App {
     gameBoard: Board;
     constructor() {
+        this._wireUpEvents();
+
         //create a new Board
+        this.createNewBoard();
+    }
+
+    private _wireUpEvents() {
+        d3.select("#btn-new-board")
+            .on("click", () => {
+                this.createNewBoard();
+                return false;
+            })
+
+        d3.select("#btn-play-board")
+            .on("click", () => {
+                this.playBoard();
+                return false;
+            })
+
+        d3.select("#btn-stop-board")
+            .on("click", () => {
+                clearTimeout(this.gameBoard.timer);
+                console.log("stopping the game...");
+                return false;
+            })
+    }
+
+    createNewBoard() {
         this.gameBoard = new Board(15, 15, 4);
         this.gameBoard.render();
+    }
+
+    playBoard() {
+        //get the ids
+        this.gameBoard.getMovesAndPlayGame();
     }
 }
 
@@ -19,14 +51,15 @@ class Board {
 
     score: number = 0;
 
-    pieces: Array<Array<Piece>>;
+    timer: any;
+
+    pieces: Array<Array<Piece>> = [];
+    _pieces: Array<Piece> = [];
 
     constructor(width: number, height: number, colors = 3) {
         this.width = width;
         this.height = height;
         this.colors = colors - 1;
-
-        this.pieces = [];
 
         let rng = seed("testingthat");
 
@@ -41,13 +74,97 @@ class Board {
                 var color = Math.floor(rng.quick() * this.colors);
                 let piece = new Piece(x, y, color);
                 column.push(piece);
+
+                this._pieces[piece.id] = piece;
             }
         }
     }
 
+    getMovesAndPlayGame() {
+        let ids = this._getIds();
+
+        this.playGame(ids);
+    }
+
+    playGame(moves: Array<number>) {
+        //this will play through the moves and remove them one at a time.
+        //if a piece cannot be remove, it will go to the render
+        let finalMoves: Array<number> = [];
+
+        //this tracks if a valid move happened
+        let wasMoveMade = true;
+
+        console.log(moves);
+
+        //this indicates which was the last non-move to come through
+        //if it comes all the way back, no moves left
+        let markerMoveToQuit: Array<number> = [];
+
+        let counter = 0;
+
+        while (moves.length) {
+            let move = moves.shift();
+            console.log(move);
+
+            if(counter++ > 1000){
+                break;
+            }
+
+            if (markerMoveToQuit.indexOf(move) > -1) {
+                console.log("no more moves, stopping")
+                break;
+            }
+
+            let result = this.removeID(move);
+
+            //removed some stuff... do the delay
+            if (result == 2) {
+                finalMoves.push(move);
+                wasMoveMade = true;
+                this.timer = setTimeout(() => {
+                    this._renderDetails();
+                    this.playGame(moves);
+                }, 250);
+
+                return;
+            }
+            //no removal, try again
+            if (result == 0) {
+                //add the spot back in if the move
+                moves.push(move);
+                markerMoveToQuit.push(move);
+            }
+            //esle is null, just go around
+        }
+    }
+
+    removeID(move: number) {
+        //this is an ID for the piece to remove
+
+        //pull the piece from the Array
+        if (this._pieces[move] != null) {
+            return (this.removePiece(this._pieces[move])) ? 2 : 0;
+        }
+
+        //true here will tell the step above to remove from the list, was alreayd rmeove from board
+        return 1;
+    }
+
+    private _getIds(): Array<number> {
+        let ids: Array<number> = [];
+        for (var piece of this._pieces) {
+            if (piece != null) {
+                ids.push(piece.id);
+            }
+
+        }
+
+        return ids;
+    }
+
     private _removePiece(piece: Piece) {
         this.pieces[piece.x][piece.y] = null;
-        console.log("remove: ", piece);
+        this._pieces[piece.id] = null;
     }
 
     private _shiftDownAndLeft() {
@@ -89,7 +206,7 @@ class Board {
         return nonNullPieces;
     }
 
-    removePiece(piece: Piece) {
+    removePiece(piece: Piece): boolean {
         //search the neighbors of this piece for same color
 
         let neighbors = this._getNeighbors(piece);
@@ -120,11 +237,11 @@ class Board {
         if (didRemovalHappen) {
             this._removePiece(piece);
             removedPieces++;
+            this.score += Math.pow(removedPieces, 2);
+            this._shiftDownAndLeft();
         }
 
-        this.score += Math.pow(removedPieces,2);
-
-        this._shiftDownAndLeft();
+        return didRemovalHappen;
     }
 
     private _getNeighbors(piece: Piece): Array<Piece> {
@@ -234,3 +351,5 @@ class Piece {
 
 //create a new App
 var app = new App();
+
+window["app"] = app;
