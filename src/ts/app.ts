@@ -30,6 +30,15 @@ class App {
                 console.log("stopping the game...");
                 return false;
             })
+
+        d3.select("#render")
+            .on("change", () => {
+                this.gameBoard.shouldRenderWithSolve = (<HTMLInputElement>document.getElementById("render")).checked;
+                console.log("check change...");
+                return false;
+            })
+
+        d3.select("#seed").text("hello")
     }
 
     createNewBoard() {
@@ -53,6 +62,8 @@ class Board {
 
     timer: any;
 
+    shouldRenderWithSolve: boolean;
+
     pieces: Array<Array<Piece>> = [];
     _pieces: Array<Piece> = [];
 
@@ -61,7 +72,10 @@ class Board {
         this.height = height;
         this.colors = colors - 1;
 
-        let rng = seed("testingthat");
+        let seedInput = (<HTMLInputElement>document.getElementById("seed")).value;
+        let rng = seed(seedInput);
+
+        this.shouldRenderWithSolve = (<HTMLInputElement>document.getElementById("render")).checked;
 
         //create the pieces
         for (var x of _.range(width)) {
@@ -94,8 +108,6 @@ class Board {
         //this tracks if a valid move happened
         let wasMoveMade = true;
 
-        console.log(moves);
-
         //this indicates which was the last non-move to come through
         //if it comes all the way back, no moves left
         let markerMoveToQuit: Array<number> = [];
@@ -104,9 +116,8 @@ class Board {
 
         while (moves.length) {
             let move = moves.shift();
-            console.log(move);
 
-            if(counter++ > 1000){
+            if (counter++ > 1000) {
                 break;
             }
 
@@ -121,12 +132,15 @@ class Board {
             if (result == 2) {
                 finalMoves.push(move);
                 wasMoveMade = true;
-                this.timer = setTimeout(() => {
-                    this._renderDetails();
-                    this.playGame(moves);
-                }, 250);
 
-                return;
+                if (this.shouldRenderWithSolve) {
+                    this.timer = setTimeout(() => {
+                        this.refreshVisuals();
+                        this.playGame(moves);
+                    }, 250);
+
+                    return;
+                }
             }
             //no removal, try again
             if (result == 0) {
@@ -136,6 +150,8 @@ class Board {
             }
             //esle is null, just go around
         }
+
+        this.refreshVisuals();
     }
 
     removeID(move: number) {
@@ -277,7 +293,7 @@ class Board {
         return (x < this.width && y < this.height && x >= 0 && y >= 0);
     }
 
-    private _renderDetails() {
+    public refreshVisuals() {
         var svg = d3.select("svg");
 
         var pieceWidth = +svg.attr("width") / this.width;
@@ -299,7 +315,7 @@ class Board {
             .on("click", (d) => {
                 console.log(d);
                 this.removePiece(d);
-                this._renderDetails();
+                this.refreshVisuals();
             });
 
         d3Cell.exit().remove();
@@ -322,9 +338,9 @@ class Board {
 
         //believe this triple call ensures that an enter, enter, and update all happen
         //could possibly complicate the data joins up above to avoid this
-        this._renderDetails();
-        this._renderDetails();
-        this._renderDetails();
+        this.refreshVisuals();
+        this.refreshVisuals();
+        this.refreshVisuals();
     }
 }
 
