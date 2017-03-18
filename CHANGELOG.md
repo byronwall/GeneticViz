@@ -3,6 +3,5 @@
  - Split the code into multiple files
 
 [Todo]
- - Remove webpack (global install)
  - Remove any other junk that was installed to help typescript
  - Clean up the npm package file
