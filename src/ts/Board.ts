@@ -5,10 +5,14 @@ import * as d3 from "d3";
 import { Piece } from "./Piece"
 
 export class Board {
+
+    boardDef: BoardDef;
+
     //hold some pieces
     width: number;
     height: number;
     colors: number;
+    seed: string;
 
     score: number = 0;
 
@@ -19,25 +23,28 @@ export class Board {
     pieces: Array<Array<Piece>> = [];
     _pieces: Array<Piece> = [];
 
-    constructor(width: number, height: number, colors = 3) {
+    constructor(boardDef: BoardDef) {
         Piece._id = 0;
 
-        this.width = width;
-        this.height = height;
-        this.colors = colors - 1;
+        this.boardDef = boardDef;
 
-        let seedInput = (<HTMLInputElement>document.getElementById("seed")).value;
-        let rng = seed(seedInput);
+        this.width = boardDef.columns;
+        this.height = boardDef.rows;
+        this.colors = boardDef.colors - 1;
+        this.seed = boardDef.seed;
 
+        let rng = seed(this.seed);
+
+        //TODO pull this out, no refences to HTML in this class...
         this.shouldRenderWithSolve = (<HTMLInputElement>document.getElementById("render")).checked;
 
         //create the pieces
-        for (var x of _.range(width)) {
+        for (var x of _.range(this.width)) {
 
             let column = [];
             this.pieces[x] = column;
 
-            for (var y of _.range(height)) {
+            for (var y of _.range(this.height)) {
                 //create a piece, add to Array
                 var color = Math.floor(rng.quick() * this.colors);
                 let piece = new Piece(x, y, color);
@@ -78,7 +85,7 @@ export class Board {
             }
 
             if (markerMoveToQuit.indexOf(move) > -1) {
-                console.log("no more moves, stopping")
+                //no more moves avialable... piece came around
                 break;
             }
 
@@ -294,6 +301,7 @@ export class Board {
 
         let dummy = [1];
 
+        //should only create the node on first entry
         var svg = d3.select('body').selectAll("svg").data(dummy).enter().append('svg').attr('width', w).attr('height', h);
 
         //believe this triple call ensures that an enter, enter, and update all happen
@@ -302,4 +310,87 @@ export class Board {
         this.refreshVisuals();
         this.refreshVisuals();
     }
+}
+
+export class BoardCompleted {
+    //this will take care of holding a reference to the board
+    //will hold the moves that were made
+    //will track the score and allow for combining sets of moves
+
+    boardDef: BoardDef;
+    moves: Array<number>;
+    score: number;
+
+}
+
+export class BoardDef {
+    seed: string = "hello";
+    rows: number = 20;
+    columns: number = 20;
+    colors: number = 4;
+
+    constructor(rows, columns, colors, seed) {
+        this.seed = seed;
+        this.rows = rows;
+        this.colors = colors;
+        this.columns = columns;
+    }
+
+}
+
+export class BoardPlayer {
+    boardDef: BoardDef;
+    attempts: Array<BoardCompleted>;
+
+    activeBoard: BoardCompleted;
+
+    constructor() {
+
+    }
+
+    render() {
+        let div = d3.select("#results");
+        let results = div.selectAll("div").data(this.attempts);
+
+        //create the divs
+        results.enter()
+            .append("div");
+
+        //set up the click event to play the board
+        results
+            .text((d) => { return d.score; })
+            .on("click", (d) => {
+                console.log("clicked on", d);
+                this.activeBoard = d;
+
+                //go ahead and play the board
+                let board = new Board(d.boardDef);
+                board.shouldRenderWithSolve = true;
+                board.render();
+                board.playGame(d.moves);
+            });
+    }
+
+    playSeveralBoards() {
+        this.attempts = [];
+
+        let playCount = 0;
+
+        while (playCount++ <= 50) {
+            let board = new Board(this.boardDef);
+
+            let moves = board.getMovesAndPlayGame();
+
+            let result = new BoardCompleted();
+            result.boardDef = this.boardDef;
+            result.moves = moves;
+            result.score = board.score;
+
+            this.attempts.push(result);
+
+            this.render();
+        }
+    }
+
+
 }

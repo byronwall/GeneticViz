@@ -1,10 +1,12 @@
 import * as _ from "lodash";
 import * as d3 from "d3";
 
-import {Board} from "./Board"
+import { Board, BoardPlayer, BoardDef } from "./Board"
 
 export class App {
     gameBoard: Board;
+    player: BoardPlayer;
+
     constructor() {
         this._wireUpEvents();
 
@@ -21,7 +23,17 @@ export class App {
 
         d3.select("#btn-play-board")
             .on("click", () => {
-                this.playBoard();
+
+                let activeBoard = this.player.activeBoard;
+                if (activeBoard) {
+                    //load play the moves from there
+                    this.gameBoard = new Board(this.player.boardDef);
+                    this.gameBoard.shouldRenderWithSolve = true;
+                    this.gameBoard.playGame(activeBoard.moves);
+                }
+                else {
+                    this.playBoard();
+                }
                 return false;
             })
 
@@ -51,7 +63,8 @@ export class App {
     }
 
     createNewBoard() {
-        this.gameBoard = new Board(15, 15, 4);
+        let def = new BoardDef(15, 15, 4, "hello");
+        this.gameBoard = new Board(def);
         this.gameBoard.render();
     }
 
@@ -60,16 +73,19 @@ export class App {
         return this.gameBoard.getMovesAndPlayGame();
     }
 
-    playSeveralBoards(){
-        let playCount = 0;
-        
-        while(playCount++ <= 10){
-            this.createNewBoard();
-            let ids = this.playBoard();
+    playSeveralBoards() {
 
-            console.log("final moves", ids);
-            console.log("score", this.gameBoard.score)
-        }
+        this.player = new BoardPlayer();
+        let boardDef = new BoardDef(20, 20, 4, "hello");
+
+        this.player.boardDef = boardDef;
+
+        this.player.playSeveralBoards();
+
+        this.player.render();
+        this.player.render();
+        this.player.render();
+
     }
 }
 
