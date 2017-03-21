@@ -1,10 +1,33 @@
 <html>
-    <head></head>
-    <body>
-        testing another
 
-        <div id="grid"></div> 
+<head>
+    <link rel="stylesheet" href="css/bootstrap.css">
 
-        <script src="bundle.js"></script>
-    </body>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-10" id="main-col">
+                <div>
+                    <input type="text" id="seed" />
+                    <input type="checkbox" id="render" />
+                    <span id="score"></span>
+                </div>
+                <div id="controls">
+                    <a href="#" id="btn-new-board">new board</a>
+                    <a href="#" id="btn-play-board">play board</a>
+                    <a href="#" id="btn-stop-board">stop playing</a>
+                    <a href="#" id="btn-solve-board">solve several</a>
+                </div>
+                <div id="grid"></div>
+            </div>
+            <div class="col">
+                <div id="results" class="list-group"> </div>
+            </div>
+        </div>
+    </div>
+    <script src="bundle.js"></script>
+</body>
+
 </html>
