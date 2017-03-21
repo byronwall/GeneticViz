@@ -1,7 +1,8 @@
 import * as _ from "lodash";
 import * as d3 from "d3";
+import * as seed from "seedrandom";
 
-import { Board, BoardPlayer, BoardDef } from "./Board"
+import { Board, BoardPlayer, BoardDef, GeneticManager } from "./Board"
 
 export class App {
     gameBoard: Board;
@@ -12,6 +13,10 @@ export class App {
 
         //create a new Board
         this.createNewBoard();
+    }
+
+    static GetRng(seedStr: string){
+        return seed(seedStr);
     }
 
     private _wireUpEvents() {
@@ -59,12 +64,26 @@ export class App {
                 return false;
             })
 
+        d3.select("#btn-do-ga")
+            .on("click", () => {
+                console.log("will do GA...");
+                
+                let boardDef = new BoardDef(20, 20, 4, "hello");
+                let ga = new GeneticManager(boardDef);
+                ga.doGeneticOps();
+
+                this.gameBoard = new Board(boardDef);
+
+                console.log("done playing");
+                return false;
+            })
+
         d3.select("#seed").text("hello")
     }
 
     createNewBoard() {
         let seed = document.getElementById("seed")["value"];
-        let def = new BoardDef(15, 15, 4, seed);
+        let def = new BoardDef(20, 20, 4, seed);
         this.gameBoard = new Board(def);
         this.gameBoard.render();
     }
