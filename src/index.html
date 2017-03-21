@@ -1,21 +1,32 @@
 <html>
 
-<head></head>
+<head>
+    <link rel="stylesheet" href="css/bootstrap.css">
+
+</head>
 
 <body>
-    <div>
-        <input type="text" id="seed" />
-        <input type="checkbox" id="render" />
-        <span id="score"></span>
+    <div class="container">
+        <div class="row">
+            <div class="col-10" id="main-col">
+                <div>
+                    <input type="text" id="seed" />
+                    <input type="checkbox" id="render" />
+                    <span id="score"></span>
+                </div>
+                <div id="controls">
+                    <a href="#" id="btn-new-board">new board</a>
+                    <a href="#" id="btn-play-board">play board</a>
+                    <a href="#" id="btn-stop-board">stop playing</a>
+                    <a href="#" id="btn-solve-board">solve several</a>
+                </div>
+                <div id="grid"></div>
+            </div>
+            <div class="col">
+                <div id="results" class="list-group"> </div>
+            </div>
+        </div>
     </div>
-    <div id="controls">
-        <a href="#" id="btn-new-board">new board</a>
-        <a href="#" id="btn-play-board">play board</a>
-        <a href="#" id="btn-stop-board">stop playing</a>
-        <a href="#" id="btn-solve-board">solve several</a>
-    </div>
-    <div id="grid"></div>
-    <div id="results"> </div>
     <script src="bundle.js"></script>
 </body>
 

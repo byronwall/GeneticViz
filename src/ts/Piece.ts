@@ -3,7 +3,6 @@ export class Piece {
     //know location
     x: number;
     y: number;
-    isSelected: boolean;
     color: number;
     id: number;
 

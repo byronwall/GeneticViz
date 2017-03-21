@@ -289,7 +289,6 @@ export class Board {
         d3Cell.transition()
             .attr('x', (d) => { return d.x * pieceWidth; })
             .attr('y', (d) => { return d.y * pieceHeight; })
-            .attr('stroke', (d) => { return (d.isSelected) ? "#000" : "#fff"; })
 
         d3.select("#score").text(this.score);
     }
@@ -302,7 +301,15 @@ export class Board {
         let dummy = [1];
 
         //should only create the node on first entry
-        var svg = d3.select('body').selectAll("svg").data(dummy).enter().append('svg').attr('width', w).attr('height', h);
+        let svg = d3.select('#main-col').selectAll("svg")
+
+        svg.selectAll("*").remove();
+
+        svg
+            .data(dummy).enter()
+            .append('svg')
+            .attr('width', w)
+            .attr('height', h);
 
         //believe this triple call ensures that an enter, enter, and update all happen
         //could possibly complicate the data joins up above to avoid this
@@ -350,11 +357,18 @@ export class BoardPlayer {
 
     render() {
         let div = d3.select("#results");
-        let results = div.selectAll("div").data(this.attempts);
+
+        _.sortBy(this.attempts, (d) => {
+            return d.score;
+        });
+
+        let results = div.selectAll("a").data(this.attempts);
 
         //create the divs
         results.enter()
-            .append("div");
+            .append("a")
+            .attr("href", "#")
+            .attr("class", "list-group-item list-group-item-action");
 
         //set up the click event to play the board
         results
@@ -391,6 +405,4 @@ export class BoardPlayer {
             this.render();
         }
     }
-
-
 }

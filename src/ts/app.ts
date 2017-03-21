@@ -63,7 +63,8 @@ export class App {
     }
 
     createNewBoard() {
-        let def = new BoardDef(15, 15, 4, "hello");
+        let seed = document.getElementById("seed")["value"];
+        let def = new BoardDef(15, 15, 4, seed);
         this.gameBoard = new Board(def);
         this.gameBoard.render();
     }
