@@ -10,3 +10,5 @@
  - Create a split screen of sorts for the board list next to the game playing
  - Add text fields for all of the options for the board creation
  - Add bootstrap and improve the visuals
+ - Add all the parameters to the index page
+ - Add a random seed to the solution process to ensure the same results can be achieved.

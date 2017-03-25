@@ -3,6 +3,7 @@ import * as _ from "lodash";
 import * as d3 from "d3";
 
 import { Piece } from "./Piece"
+import { App } from "./app";
 
 export class Board {
 
@@ -30,10 +31,10 @@ export class Board {
 
         this.width = boardDef.columns;
         this.height = boardDef.rows;
-        this.colors = boardDef.colors - 1;
+        this.colors = boardDef.colors;
         this.seed = boardDef.seed;
 
-        let rng = seed(this.seed);
+        let rng = App.GetRng(this.seed);
 
         //TODO pull this out, no refences to HTML in this class...
         this.shouldRenderWithSolve = (<HTMLInputElement>document.getElementById("render")).checked;
@@ -68,6 +69,8 @@ export class Board {
         //if a piece cannot be remove, it will go to the render
         let finalMoves: Array<number> = [];
 
+        let moveCopy = moves.slice();
+
         //this tracks if a valid move happened
         let wasMoveMade = true;
 
@@ -77,8 +80,8 @@ export class Board {
 
         let counter = 0;
 
-        while (moves.length) {
-            let move = moves.shift();
+        while (moveCopy.length) {
+            let move = moveCopy.shift();
 
             if (counter++ > 1000) {
                 break;
@@ -99,7 +102,7 @@ export class Board {
                 if (this.shouldRenderWithSolve) {
                     this.timer = setTimeout(() => {
                         this.refreshVisuals();
-                        this.playGame(moves);
+                        this.playGame(moveCopy);
                     }, 250);
 
                     return;
@@ -108,13 +111,11 @@ export class Board {
             //no removal, try again
             if (result == 0) {
                 //add the spot back in if the move
-                moves.push(move);
+                moveCopy.push(move);
                 markerMoveToQuit.push(move);
             }
             //esle is null, just go around
         }
-
-        this.refreshVisuals();
 
         return finalMoves;
     }
@@ -326,7 +327,23 @@ export class BoardCompleted {
 
     boardDef: BoardDef;
     moves: Array<number>;
+    finalMove: Array<number>;
     score: number;
+
+    id: number;
+    static _id = 0;
+
+    constructor(boardDef, moves) {
+        //take those two and get a result
+        this.boardDef = boardDef;
+        this.moves = moves;
+
+        let board = new Board(this.boardDef);
+        this.finalMove = board.playGame(this.moves);
+        this.score = board.score;
+
+        this.id = BoardCompleted._id++;
+    }
 
 }
 
@@ -336,11 +353,19 @@ export class BoardDef {
     columns: number = 20;
     colors: number = 4;
 
+
     constructor(rows, columns, colors, seed) {
         this.seed = seed;
         this.rows = rows;
         this.colors = colors;
         this.columns = columns;
+    }
+
+    getRandomMoves() {
+        let moves = _.range(this.rows * this.columns);
+        moves = _.shuffle(moves);
+
+        return moves;
     }
 
 }
@@ -358,8 +383,8 @@ export class BoardPlayer {
     render() {
         let div = d3.select("#results");
 
-        _.sortBy(this.attempts, (d) => {
-            return d.score;
+        this.attempts = _.sortBy(this.attempts, (d) => {
+            return -d.score;
         });
 
         let results = div.selectAll("a").data(this.attempts);
@@ -391,14 +416,8 @@ export class BoardPlayer {
         let playCount = 0;
 
         while (playCount++ <= 50) {
-            let board = new Board(this.boardDef);
-
-            let moves = board.getMovesAndPlayGame();
-
-            let result = new BoardCompleted();
-            result.boardDef = this.boardDef;
-            result.moves = moves;
-            result.score = board.score;
+            let moves = this.boardDef.getRandomMoves();
+            let result = new BoardCompleted(this.boardDef, moves);
 
             this.attempts.push(result);
 
