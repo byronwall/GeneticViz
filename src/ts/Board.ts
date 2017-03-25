@@ -69,6 +69,8 @@ export class Board {
         //if a piece cannot be remove, it will go to the render
         let finalMoves: Array<number> = [];
 
+        let moveCopy = moves.slice();
+
         //this tracks if a valid move happened
         let wasMoveMade = true;
 
@@ -78,8 +80,8 @@ export class Board {
 
         let counter = 0;
 
-        while (moves.length) {
-            let move = moves.shift();
+        while (moveCopy.length) {
+            let move = moveCopy.shift();
 
             if (counter++ > 1000) {
                 break;
@@ -100,7 +102,7 @@ export class Board {
                 if (this.shouldRenderWithSolve) {
                     this.timer = setTimeout(() => {
                         this.refreshVisuals();
-                        this.playGame(moves);
+                        this.playGame(moveCopy);
                     }, 250);
 
                     return;
@@ -109,7 +111,7 @@ export class Board {
             //no removal, try again
             if (result == 0) {
                 //add the spot back in if the move
-                moves.push(move);
+                moveCopy.push(move);
                 markerMoveToQuit.push(move);
             }
             //esle is null, just go around
@@ -421,151 +423,5 @@ export class BoardPlayer {
 
             this.render();
         }
-    }
-}
-
-export class GeneticManager {
-    //will store the populations and manage the operations
-    population: Array<BoardCompleted> = [];
-
-    private initialSize = 50;
-    private rounds = 10;
-    private rng: seed.prng;
-
-    private solve_seed = "testing";
-
-    boardDef: BoardDef;
-
-    constructor(boardDef: BoardDef) {
-        this.rng = App.GetRng(this.solve_seed);
-
-        this.boardDef = boardDef;
-    }
-
-    createInitialPop() {
-        //make the random ones
-        let popSize = 0;
-        while (popSize++ <= this.initialSize) {
-            let moves = this.boardDef.getRandomMoves();
-            let result = new BoardCompleted(this.boardDef, moves);
-
-            this.population.push(result);
-        }
-    }
-
-    doGeneticOps() {
-        this.createInitialPop();
-        this.render();
-
-        let generation = 0;
-        while (generation++ <= this.rounds) {
-            this.doGeneticRound();
-
-            this.render();
-        }
-    }
-
-    doGeneticRound() {
-
-
-        let keepRatio = 0.5;
-        let crossRatio = 0.7;
-        let mutateRatio = 0.01;
-        let randomRatio = 0.2;
-
-        //filter the population, sort and slice
-        this.population = _.sortBy(this.population, (item) => {
-            return -item.score;
-        });
-
-        this.render();
-
-        this.population.slice(0, Math.floor(keepRatio * this.initialSize));
-
-        //do the crossovers
-        let crossCount = Math.floor(crossRatio * this.initialSize);
-        while (crossCount-- >= 0) {
-            //pick a random one
-            let index1 = Math.floor(this.rng.quick() * this.population.length)
-            let item1 = this.population[index1];
-            let moves1 = item1.moves;
-            let cross1 = Math.floor(this.rng.quick() * moves1.length);
-
-            let index2 = Math.floor(this.rng.quick() * this.population.length);
-            let item2 = this.population[index2];
-            let moves2 = item2.moves;
-            let cross2 = Math.floor(this.rng.quick() * moves2.length);
-
-            //pick another random one
-
-            let newMoves1 = _.concat(moves1.slice(0, cross1), moves2.slice(cross2), this.boardDef.getRandomMoves());
-            let newMoves2 = _.concat(moves2.slice(0, cross2), moves1.slice(cross1), this.boardDef.getRandomMoves());
-
-            //pick the crossover spot for 1
-
-            let result1 = new BoardCompleted(this.boardDef, newMoves1);
-            let result2 = new BoardCompleted(this.boardDef, newMoves2);
-
-            console.log("cross results", result1, result2);
-
-            //keep those if the score is better
-            if (result1.score > Math.max(item1.score, item2.score)) {
-                this.population.push(result1);
-            }
-
-            if (result2.score > Math.max(item1.score, item2.score)) {
-                this.population.push(result2);
-            }
-
-            //pick for the another
-
-            //take the first half of 1 and second of 2
-
-            //take the first half of 2 and the end of 1
-
-            //add those to the new population
-        }
-
-        //run through the resulting ones and process mutates
-
-        //add the random runs
-
-        //evalute the population
-
-        //done
-
-    }
-    render() {
-        let div = d3.select("#results");
-
-        this.population = _.sortBy(this.population, (d) => {
-            return -d.score;
-        });
-
-        let results = div.selectAll("a")
-            .data(this.population, (d: BoardCompleted, i) => {
-                return "" + d.id;
-            });
-
-        //create the divs
-        results.enter()
-            .append("a")
-            .attr("href", "#")
-            .attr("class", "list-group-item list-group-item-action");
-
-        results.exit().remove();
-
-        //set up the click event to play the board
-        results
-            .text((d) => { return d.score; })
-            .on("click", (d) => {
-                console.log("clicked on", d);
-
-                //go ahead and play the board
-                let board = new Board(d.boardDef);
-                board.shouldRenderWithSolve = true;
-                board.render();
-                board.playGame(d.finalMove);
-            });
     }
 }
